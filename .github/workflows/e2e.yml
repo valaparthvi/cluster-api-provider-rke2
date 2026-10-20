@@ -5,6 +5,11 @@ on:
   schedule:
     - cron: "0 1 * * *"
   workflow_dispatch:
+    inputs:
+      run-release-branches:
+        type: boolean
+        default: true
+        description: Run E2E from all the latest release branches
 
 jobs:
   e2e-tests:
@@ -91,12 +96,12 @@ jobs:
           path: _artifacts
           if-no-files-found: ignore
   release-branches:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run-release-branches) }}
     uses: ./.github/workflows/release-branches.yml
   e2e-nightly-release-branches:
     # Scheduled workflows run only on the default branch, so check out each
     # recent release branch explicitly.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run-release-branches) }}
     needs: release-branches
     name: e2e-nightly (${{ matrix.ref }}, ${{ matrix.label }})
     runs-on: runs-on,runner=4cpu-linux-x64,run-id=${{ github.run_id }}
